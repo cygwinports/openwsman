@@ -1,0 +1,65 @@
+inherit perl python ruby cmake
+
+NAME="openwsman"
+VERSION=2.6.3
+RELEASE=1
+CATEGORY="Libs"
+SUMMARY="WS-Management protocol libraries"
+DESCRIPTION="Openwsman is an open source implementation of WS-Management,
+enabling the in-band management of Linux/*NIX/Windows platforms."
+HOMEPAGE="https://openwsman.github.io/"
+SRC_URI="https://github.com/Openwsman/openwsman/archive/v${VERSION}/openwsman-v${VERSION}.tar.gz"
+PATCH_URI="
+	2.6.3-cygwin-compile.patch
+	2.6.3-libs-as-needed.patch
+	2.6.3-libs-install.patch
+	2.6.3-bindings-perl.patch
+	2.6.3-bindings-python.patch
+	2.6.3-bindings-ruby.patch
+"
+
+PKG_NAMES="libwsman1 libwsman_client4 libwsman_clientpp1
+           libwsman-common libwsman-devel ${NAME}-winrs
+           perl-${NAME} python-${NAME} ruby-${NAME}"
+libwsman1_SUMMARY="WS-Management protocol core library"
+libwsman1_REQUIRES="libwsman-common"
+libwsman1_CONTENTS="usr/bin/cygwsman-1.dll"
+libwsman_client4_SUMMARY="WS-Management protocol client library"
+libwsman_client4_CONTENTS="usr/bin/cygwsman_client-4.dll"
+libwsman_clientpp1_SUMMARY="WS-Management protocol C++ client library"
+libwsman_clientpp1_CONTENTS="usr/bin/cygwsman_clientpp-1.dll"
+libwsman_common_CONTENTS="etc/${NAME}/ usr/share/doc/${NAME}/"
+libwsman_devel_CONTENTS="
+	usr/include/${NAME}/
+	usr/lib/libwsman*.dll.a
+	usr/lib/pkgconfig/${NAME}*.pc
+"
+perl_openwsman_CONTENTS=${PERL_VENDORLIB#/}
+python_openwsman_CONTENTS=${PYTHON_SITELIB#/}
+ruby_openwsman_CONTENTS=${RUBY_VENDORARCH#/}" "${RUBY_VENDORLIB#/}
+openwsman_winrs_CATEGORY="System"
+openwsman_winrs_SUMMARY="WS-Management remote shell"
+openwsman_winrs_CONTENTS="usr/bin/winrs"
+PKG_IGNORE="etc/pam.d/"
+
+CFLAGS+=" -fno-strict-aliasing"
+# ENABLE_EVENTING_SUPPORT: circular dep between libwsman and libwsman_client
+CYGCMAKE_ARGS="
+	-DBUILD_CSHARP=OFF
+	-DBUILD_JAVA=OFF
+	-DBUILD_LIBCIM=OFF
+	-DBUILD_PERL=ON
+	-DBUILD_PYTHON=ON
+	-DBUILD_RUBY=ON
+	-DDISABLE_PLUGINS=ON
+	-DDISABLE_SERVER=ON
+	-DENABLE_EVENTING_SUPPORT=OFF
+	-DUSE_PAM=OFF
+"
+
+src_install() {
+	cd ${B}
+	cyginstall
+
+	python_optimize
+}

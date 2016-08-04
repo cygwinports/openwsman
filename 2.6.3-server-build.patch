@@ -1,0 +1,167 @@
+--- origsrc/openwsman-2.6.3/include/wsman-server.h	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/include/wsman-server.h	2016-07-03 21:18:03.377311300 -0500
+@@ -39,7 +39,7 @@
+ #include "wsman-plugins.h"
+ #include "wsman-subscription-repository.h"
+ #include "wsman-event-pool.h"
+-extern int continue_working;
++int continue_working;
+ 
+ WsContextH wsman_init_plugins(WsManListenerH *listener);
+ SubsRepositoryOpSetH wsman_init_subscription_repository(WsContextH cntx, char *uri);
+--- origsrc/openwsman-2.6.3/src/authenticators/file/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/authenticators/file/CMakeLists.txt	2016-07-03 23:06:07.171850500 -0500
+@@ -6,8 +6,9 @@ include_directories(${CMAKE_SOURCE_DIR}/
+ 
+ SET( file_auth_SOURCES file_auth.c )
+ 
+-ADD_LIBRARY( wsman_file_auth SHARED ${file_auth_SOURCES} )
++ADD_LIBRARY( wsman_file_auth MODULE ${file_auth_SOURCES} )
+ TARGET_LINK_LIBRARIES( wsman_file_auth ${CRYPT_LIBRARIES} )
++TARGET_LINK_LIBRARIES( wsman_file_auth wsman )
+ SET_TARGET_PROPERTIES( wsman_file_auth PROPERTIES VERSION 1.0.0 SOVERSION 1)
+ 
+ INSTALL(TARGETS wsman_file_auth DESTINATION ${PACKAGE_AUTH_DIR})
+--- origsrc/openwsman-2.6.3/src/authenticators/pam/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/authenticators/pam/CMakeLists.txt	2016-07-03 23:06:17.912496200 -0500
+@@ -7,9 +7,10 @@ include_directories(${CMAKE_SOURCE_DIR}/
+ 
+ SET( pam_auth_SOURCES pam_auth.c )
+ 
+-ADD_LIBRARY( wsman_pam_auth SHARED ${pam_auth_SOURCES} )
++ADD_LIBRARY( wsman_pam_auth MODULE ${pam_auth_SOURCES} )
+ TARGET_LINK_LIBRARIES( wsman_pam_auth ${CRYPT_LIBRARIES} )
+ TARGET_LINK_LIBRARIES( wsman_pam_auth ${HAVE_LIBPAM} )
++TARGET_LINK_LIBRARIES( wsman_pam_auth wsman )
+ if( HAVE_LIBDL )
+ TARGET_LINK_LIBRARIES( wsman_pam_auth ${DL_LIBRARIES})
+ endif( HAVE_LIBDL )
+--- origsrc/openwsman-2.6.3/src/lib/wsman-server.c	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/lib/wsman-server.c	2016-07-03 21:18:24.189843700 -0500
+@@ -63,6 +63,7 @@
+ #include "wsman-event-pool.h"
+ #include "wsman-subscription-repository.h"
+ 
++continue_working = 1;
+ 
+ WsManListenerH *wsman_dispatch_list_new()
+ {
+--- origsrc/openwsman-2.6.3/src/plugins/identify/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/plugins/identify/CMakeLists.txt	2016-07-03 21:57:54.973203700 -0500
+@@ -7,6 +7,7 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/
+ SET(wsman_identify_plugin_SOURCES identify.c identify_stubs.c identify.h)
+ 
+ ADD_LIBRARY( wsman_identify_plugin SHARED ${wsman_identify_plugin_SOURCES} )
++TARGET_LINK_LIBRARIES( wsman_identify_plugin wsman )
+ 
+ SET_TARGET_PROPERTIES(wsman_identify_plugin PROPERTIES VERSION 1.0.0 SOVERSION 1)
+ INSTALL(TARGETS wsman_identify_plugin DESTINATION ${PACKAGE_PLUGIN_DIR})
+--- origsrc/openwsman-2.6.3/src/plugins/redirect/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/plugins/redirect/CMakeLists.txt	2016-07-03 23:03:36.653827500 -0500
+@@ -7,6 +7,9 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/
+ SET(redirect_SOURCES redirect.c redirect.h redirect_stubs.c)
+ 
+ ADD_LIBRARY( redirect SHARED ${redirect_SOURCES} )
++TARGET_LINK_LIBRARIES( redirect wsman )
++TARGET_LINK_LIBRARIES( redirect wsman_client )
++TARGET_LINK_LIBRARIES( redirect openwsmand )
+ 
+ SET_TARGET_PROPERTIES(redirect PROPERTIES VERSION 1.0.0 SOVERSION 1)
+ INSTALL(TARGETS redirect DESTINATION ${PACKAGE_PLUGIN_DIR})
+--- origsrc/openwsman-2.6.3/src/plugins/swig/python/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/plugins/swig/python/CMakeLists.txt	2016-07-03 23:04:34.603241000 -0500
+@@ -50,10 +50,11 @@ INCLUDE_DIRECTORIES( ${PYTHON_INCLUDE_DI
+ #
+ 
+ SET( NAME wsman_python_plugin )
+-ADD_LIBRARY( ${NAME} SHARED ${SWIG_OUTPUT})
++ADD_LIBRARY( ${NAME} MODULE ${SWIG_OUTPUT})
+ #TARGET_LINK_LIBRARIES( ${NAME} ${PYTHON_LIBRARIES} )
+ TARGET_LINK_LIBRARIES( ${NAME} python${PYTHON_MAJOR_VERSION}.${PYTHON_MINOR_VERSION} )
+ TARGET_LINK_LIBRARIES( ${NAME} pthread )
++TARGET_LINK_LIBRARIES( ${NAME} wsman )
+ 
+ INSTALL(TARGETS ${NAME} LIBRARY DESTINATION ${PACKAGE_PLUGIN_DIR})
+ 
+--- origsrc/openwsman-2.6.3/src/plugins/swig/ruby/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/plugins/swig/ruby/CMakeLists.txt	2016-07-03 23:05:05.333359600 -0500
+@@ -42,9 +42,11 @@ ADD_DEFINITIONS(-DTARGET_RUBY)
+ #
+ 
+ SET( NAME wsman_ruby_plugin )
+-ADD_LIBRARY( ${NAME} SHARED ${SWIG_OUTPUT})
++ADD_LIBRARY( ${NAME} MODULE ${SWIG_OUTPUT})
+ TARGET_LINK_LIBRARIES( ${NAME} ${RUBY_LIBRARY} )
+ TARGET_LINK_LIBRARIES( ${NAME} pthread )
++TARGET_LINK_LIBRARIES( ${NAME} wsman )
++TARGET_LINK_LIBRARIES( ${NAME} wsman_client )
+ 
+ INSTALL(TARGETS ${NAME} LIBRARY DESTINATION ${PACKAGE_PLUGIN_DIR})
+ 
+--- origsrc/openwsman-2.6.3/src/plugins/wsman/test/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/plugins/wsman/test/CMakeLists.txt	2016-07-03 21:58:52.459944000 -0500
+@@ -6,6 +6,7 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/
+ SET(wsman_test_SOURCES wsman_test.c wsman_test_stubs.c wsman_test.h)
+ 
+ ADD_LIBRARY( wsman_test SHARED ${wsman_test_SOURCES} )
++TARGET_LINK_LIBRARIES( wsman_test wsman)
+ 
+ SET_TARGET_PROPERTIES(wsman_test PROPERTIES VERSION 1.0.0 SOVERSION 1)
+ INSTALL(TARGETS wsman_test DESTINATION ${PACKAGE_PLUGIN_DIR})
+--- origsrc/openwsman-2.6.3/src/server/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/server/CMakeLists.txt	2016-07-03 23:03:06.907105000 -0500
+@@ -13,7 +13,11 @@ SET(openwsmand_SOURCES ${openwsmand_SOUR
+ SET(openwsmand_SOURCES ${openwsmand_SOURCES} wsmand-listener.h wsmand-daemon.c wsmand-daemon.h wsmand-listener.c)
+ SET(openwsmand_SOURCES ${openwsmand_SOURCES} gss.c wsmand.c)
+ 
++if(CYGWIN)
++EXECUTE_PROCESS(COMMAND "/usr/bin/dlltool" "-I" "${LIB_INSTALL_DIR}/libssl.dll.a" OUTPUT_VARIABLE SSL_LIB_OUT)
++else()
+ EXECUTE_PROCESS(COMMAND "/usr/bin/readlink" "${LIB_INSTALL_DIR}/libssl.so" OUTPUT_VARIABLE SSL_LIB_OUT)
++endif()
+ STRING(REPLACE "\n" "" SSL_LIB "${SSL_LIB_OUT}")
+ 
+ MESSAGE(STATUS "SSL_LIB is at >${SSL_LIB}<")
+@@ -25,6 +29,7 @@ ADD_DEFINITIONS(-DPACKAGE_AUTH_DIR="\\\"
+ ADD_DEFINITIONS(-DPACKAGE_SUBSCRIPTION_DIR="\\\"${PACKAGE_SUBSCRIPTION_DIR}\\\"")
+ 
+ ADD_EXECUTABLE(openwsmand ${openwsmand_SOURCES})
++SET_TARGET_PROPERTIES(openwsmand PROPERTIES ENABLE_EXPORTS ON)
+ TARGET_LINK_LIBRARIES(openwsmand wsman_server wsman ${LIBXML2_LIBRARIES})
+ 
+ if( ENABLE_EVENTING_SUPPORT )
+--- origsrc/openwsman-2.6.3/src/server/shttpd/compat_unix.h	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/server/shttpd/compat_unix.h	2016-07-03 16:55:18.143234800 -0500
+@@ -21,7 +21,11 @@
+ #include <dirent.h>
+ #include <dlfcn.h>
+ #ifndef SSL_LIB
++#ifdef __CYGWIN__
++#define	SSL_LIB				"cygssl-1.0.0.dll"
++#else
+ #define	SSL_LIB				"libssl.so"
++#endif /* __CYGWIN__ */
+ #endif
+ #define	DIRSEP				'/'
+ #define	IS_DIRSEP_CHAR(c)		((c) == '/')
+--- origsrc/openwsman-2.6.3/src/server/wsmand-daemon.c	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/server/wsmand-daemon.c	2016-07-03 21:03:13.219823800 -0500
+@@ -59,6 +59,8 @@
+ #endif
+ #ifdef __APPLE__
+ #define DEFAULT_BASIC_AUTH  "libwsman_file_auth.dylib"
++#elif defined __CYGWIN__
++#define DEFAULT_BASIC_AUTH  "cygwsman_file_auth.dll"
+ #else
+ #define DEFAULT_BASIC_AUTH  "libwsman_file_auth.so"
+ #endif
+--- origsrc/openwsman-2.6.3/src/server/wsmand-listener.c	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/server/wsmand-listener.c	2016-07-03 21:18:41.666499500 -0500
+@@ -90,7 +90,6 @@ static long *lock_count;
+ 
+ static pthread_mutex_t shttpd_mutex;
+ static pthread_cond_t shttpd_cond;
+-int continue_working = 1;
+ static int (*basic_callback) (char *, char *) = NULL;
+ 
+ struct thread {

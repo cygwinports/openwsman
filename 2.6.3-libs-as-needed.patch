@@ -1,0 +1,56 @@
+--- origsrc/openwsman-2.6.3/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/CMakeLists.txt	2016-07-03 23:24:46.748447400 -0500
+@@ -488,7 +489,6 @@ SET(WSMAN_PKG wsman)
+ SET(WSMAN_SERVER_PKG wsman_server)
+ SET(WSMAN_CLIENT_PKG wsman_client)
+ SET(WSMAN_CLIENTPP_PKG wsman_clientpp)
+-SET(WSMAN_CLIENT_TRANSPORT_PKG wsman_curl_client_transport)
+ 
+ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/wsman_config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/wsman_config.h)
+ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+--- origsrc/openwsman-2.6.3/openwsman.pc.in	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/openwsman.pc.in	2016-07-03 23:24:27.595165200 -0500
+@@ -8,5 +8,5 @@ Name: @PACKAGE@
+ Description: Opensource Implementation of WS-Management Client
+ Version: @VERSION@
+ Requires:
+-Libs: -L${libdir} -l@WSMAN_PKG@ -l@WSMAN_CLIENT_PKG@ -l@WSMAN_CLIENT_TRANSPORT_PKG@ 
++Libs: -L${libdir} -l@WSMAN_PKG@ -l@WSMAN_CLIENT_PKG@
+ Cflags: -I${includedir}/@PACKAGE@ 
+--- origsrc/openwsman-2.6.3/src/lib/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/lib/CMakeLists.txt	2016-07-03 23:15:37.956245400 -0500
+@@ -48,25 +50,19 @@ IF ( NOT DISABLE_SERVER )
+  INSTALL(TARGETS ${WSMAN_SERVER_PKG} DESTINATION ${LIB_INSTALL_DIR})
+ ENDIF ( NOT DISABLE_SERVER )
+ 
+-########## wsman_curl_client_transport ###############
++############### wsman_client ###############
+ 
+-SET( wsman_curl_client_transport_SOURCES wsman-client-transport.c wsman-curl-client-transport.c )
+-ADD_LIBRARY( ${WSMAN_CLIENT_TRANSPORT_PKG} SHARED ${wsman_curl_client_transport_SOURCES} )
+-TARGET_LINK_LIBRARIES( ${WSMAN_CLIENT_TRANSPORT_PKG} ${CURL_LIBRARIES} )
++SET( wsman_client_SOURCES wsman-client.c wsman-client-transport.c wsman-curl-client-transport.c )
++ADD_LIBRARY( ${WSMAN_CLIENT_PKG} SHARED ${wsman_client_SOURCES} ${wsman_curl_client_transport_SOURCES} )
++TARGET_LINK_LIBRARIES( ${WSMAN_CLIENT_PKG} wsman )
++TARGET_LINK_LIBRARIES( ${WSMAN_CLIENT_PKG} ${CURL_LIBRARIES} )
+ IF( ENABLE_EVENTING_SUPPORT )
+-TARGET_LINK_LIBRARIES( ${WSMAN_CLIENT_TRANSPORT_PKG} ${OPENSSL_LIBRARIES} )
++TARGET_LINK_LIBRARIES( ${WSMAN_CLIENT_PKG} ${OPENSSL_LIBRARIES} )
+ ENDIF( ENABLE_EVENTING_SUPPORT )
+-SET_TARGET_PROPERTIES( ${WSMAN_CLIENT_TRANSPORT_PKG} PROPERTIES VERSION 1.0.0 SOVERSION 1)
+-INSTALL(TARGETS ${WSMAN_CLIENT_TRANSPORT_PKG} DESTINATION ${LIB_INSTALL_DIR})
+-
+-
+-############### wsman_client ###############
+-
+-SET( wsman_client_SOURCES wsman-client.c )
+-ADD_LIBRARY( ${WSMAN_CLIENT_PKG} SHARED ${wsman_client_SOURCES} )
+-TARGET_LINK_LIBRARIES( ${WSMAN_CLIENT_PKG} wsman_curl_client_transport )
+ SET_TARGET_PROPERTIES( ${WSMAN_CLIENT_PKG} PROPERTIES VERSION 4.0.0 SOVERSION 4)
+-INSTALL(TARGETS ${WSMAN_CLIENT_PKG} DESTINATION ${LIB_INSTALL_DIR})
++INSTALL(TARGETS ${WSMAN_CLIENT_PKG} LIBRARY DESTINATION ${LIB_INSTALL_DIR}
++                                    RUNTIME DESTINATION bin
++                                    ARCHIVE DESTINATION ${LIB_INSTALL_DIR})
+ 
+ #
+ #EXTRA_DIST = \

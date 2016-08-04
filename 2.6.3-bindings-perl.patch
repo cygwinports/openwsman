@@ -1,0 +1,32 @@
+--- origsrc/openwsman-2.6.3/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/CMakeLists.txt	2016-07-03 23:24:46.748447400 -0500
+@@ -202,6 +202,7 @@ ENDIF( BUILD_PYTHON )
+ IF( BUILD_PERL )
+   INCLUDE(FindPerl)
+   IF(PERL_EXECUTABLE)
++    FIND_PACKAGE(PerlLibs REQUIRED)
+     MESSAGE(STATUS "Building Perl bindings" )
+   ELSE(PERL_EXECUTABLE)
+     MESSAGE(WARNING "Perl not found" )
+--- origsrc/openwsman-2.6.3/bindings/perl/CMakeLists.txt	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/bindings/perl/CMakeLists.txt	2016-07-03 21:56:10.251784300 -0500
+@@ -42,7 +42,7 @@ ADD_CUSTOM_COMMAND (
+ SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall" )
+ 
+ SET(wsman_SRCS ${SWIG_OUTPUT} ${CMAKE_CURRENT_SOURCE_DIR}/../openwsman.c)
+-ADD_LIBRARY( plwsman SHARED ${wsman_SRCS} )
++ADD_LIBRARY( plwsman MODULE ${wsman_SRCS} )
+ SET_TARGET_PROPERTIES( plwsman PROPERTIES PREFIX "" )
+ SET_TARGET_PROPERTIES( plwsman PROPERTIES OUTPUT_NAME "openwsman" )
+ 
+@@ -50,6 +50,10 @@ INCLUDE_DIRECTORIES( ${PERL_CORE_DIR} ${
+ 
+ TARGET_LINK_LIBRARIES( plwsman wsman )
+ TARGET_LINK_LIBRARIES( plwsman wsman_client )
++TARGET_LINK_LIBRARIES( plwsman ${PERL_LIBRARY} )
++if(CYGWIN)
++TARGET_LINK_LIBRARIES( plwsman ssp )
++endif()
+ 
+ INSTALL(TARGETS plwsman LIBRARY DESTINATION ${PERL_VENDOR_ARCH} )
+ INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/openwsman.pm DESTINATION ${PERL_VENDOR_LIB} )

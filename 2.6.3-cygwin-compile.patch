@@ -1,0 +1,68 @@
+--- origsrc/openwsman-2.6.3/src/lib/u/lock.c	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/lib/u/lock.c	2016-07-03 17:30:26.473428200 -0500
+@@ -50,7 +50,7 @@
+ extern int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
+ #endif
+ 
+-#if defined (__SVR4) && defined (__sun)
++#if defined (__SVR4) && defined (__sun) || defined (__CYGWIN__)
+ #define PTHREAD_MUTEX_RECURSIVE_NP PTHREAD_MUTEX_RECURSIVE
+ #endif
+ 
+--- origsrc/openwsman-2.6.3/src/lib/u/uuid.c	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/lib/u/uuid.c	2016-07-03 17:29:34.093114700 -0500
+@@ -136,7 +136,6 @@ generate_uuid(char *buf, int size, int b
+ #include <sys/socket.h>
+ #include <fcntl.h>
+ #include <net/if.h>
+-#include <net/if_arp.h>
+ #include <sys/utsname.h>
+ #include <sys/param.h>
+ #include <netinet/in.h>
+--- origsrc/openwsman-2.6.3/src/lib/wsman-soap.c	2016-06-21 06:36:20.000000000 -0500
++++ src/openwsman-2.6.3/src/lib/wsman-soap.c	2016-07-03 21:15:39.342126800 -0500
+@@ -40,6 +40,9 @@
+ 
+ #define _GNU_SOURCE
+ 
++#ifdef __CYGWIN__
++#include <dlfcn.h>
++#endif
+ #include "u/libu.h"
+ #include "wsman-xml-api.h"
+ #include "wsman-soap.h"
+@@ -941,10 +944,12 @@ unsigned long get_total_enum_context(WsC
+  * preset, hence marking them as weak symbols and testing to see
+  * if they are resolved before using them.
+  */
++#ifndef __CYGWIN__
+ #pragma weak wsmand_options_get_max_threads
+ extern int wsmand_options_get_max_threads(void);
+ #pragma weak wsmand_options_get_max_connections_per_thread
+ extern int wsmand_options_get_max_connections_per_thread(void);
++#endif
+ 
+ /**
+  * Enumeration Stub for processing enumeration requests
+@@ -975,9 +980,21 @@ wsenum_enumerate_stub(SoapOpH op,
+         int max_threads = 0;
+         int max_connections_per_thread = 0;
+         int(* fptr)(void);
++#ifdef __CYGWIN__
++        static void *handle = NULL;
++        if (!handle) dlopen(NULL, 0);
++        fptr = (typeof(fptr))dlsym(handle, "wsmand_options_get_max_threads");
++        if(fptr){
++#else
+         if((fptr = wsmand_options_get_max_threads) != 0){
++#endif
+                 max_threads = (* fptr)();
++#ifdef __CYGWIN__
++                fptr = (typeof(fptr))dlsym(handle, "wsmand_options_get_max_connections_per_thread");
++                if(fptr){
++#else
+                 if((fptr = wsmand_options_get_max_connections_per_thread) != 0){
++#endif
+                         max_connections_per_thread = (* fptr)();
+                 }
+                 else{
