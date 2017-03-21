@@ -1,8 +1,8 @@
-inherit perl python ruby cmake
+inherit perl python2 ruby cmake
 
 NAME="openwsman"
 VERSION=2.6.3
-RELEASE=1
+RELEASE=2
 CATEGORY="Libs"
 SUMMARY="WS-Management protocol libraries"
 DESCRIPTION="Openwsman is an open source implementation of WS-Management,
@@ -20,7 +20,7 @@ PATCH_URI="
 
 PKG_NAMES="libwsman1 libwsman_client4 libwsman_clientpp1
            libwsman-common libwsman-devel ${NAME}-winrs
-           perl-${NAME} python-${NAME} ruby-${NAME}"
+           perl-${NAME} python2-${NAME} ruby-${NAME}"
 libwsman1_SUMMARY="WS-Management protocol core library"
 libwsman1_REQUIRES="libwsman-common"
 libwsman1_CONTENTS="usr/bin/cygwsman-1.dll"
@@ -35,7 +35,8 @@ libwsman_devel_CONTENTS="
 	usr/lib/pkgconfig/${NAME}*.pc
 "
 perl_openwsman_CONTENTS=${PERL_VENDORLIB#/}
-python_openwsman_CONTENTS=${PYTHON_SITELIB#/}
+python2_openwsman_OBSOLETES="python-openwsman"
+python2_openwsman_CONTENTS=${PYTHON2_SITELIB#/}
 ruby_openwsman_CONTENTS=${RUBY_VENDORARCH#/}" "${RUBY_VENDORLIB#/}
 openwsman_winrs_CATEGORY="System"
 openwsman_winrs_SUMMARY="WS-Management remote shell"
@@ -56,10 +57,3 @@ CYGCMAKE_ARGS="
 	-DENABLE_EVENTING_SUPPORT=OFF
 	-DUSE_PAM=OFF
 "
-
-src_install() {
-	cd ${B}
-	cyginstall
-
-	python_optimize
-}
