@@ -2,7 +2,7 @@ inherit perl python2 ruby cmake
 
 NAME="openwsman"
 VERSION=2.6.3
-RELEASE=2
+RELEASE=3
 CATEGORY="Libs"
 SUMMARY="WS-Management protocol libraries"
 DESCRIPTION="Openwsman is an open source implementation of WS-Management,
@@ -34,7 +34,7 @@ libwsman_devel_CONTENTS="
 	usr/lib/libwsman*.dll.a
 	usr/lib/pkgconfig/${NAME}*.pc
 "
-perl_openwsman_CONTENTS=${PERL_VENDORLIB#/}
+perl_openwsman_CONTENTS=${PERL_VENDORARCH#/}" "${PERL_VENDORLIB#/}
 python2_openwsman_OBSOLETES="python-openwsman"
 python2_openwsman_CONTENTS=${PYTHON2_SITELIB#/}
 ruby_openwsman_CONTENTS=${RUBY_VENDORARCH#/}" "${RUBY_VENDORLIB#/}
