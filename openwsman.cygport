@@ -1,8 +1,8 @@
-inherit perl python2 ruby cmake
+inherit perl python3 ruby cmake
 
 NAME="openwsman"
-VERSION=2.6.3
-RELEASE=3
+VERSION=2.6.5
+RELEASE=1
 CATEGORY="Libs"
 SUMMARY="WS-Management protocol libraries"
 DESCRIPTION="Openwsman is an open source implementation of WS-Management,
@@ -20,7 +20,7 @@ PATCH_URI="
 
 PKG_NAMES="libwsman1 libwsman_client4 libwsman_clientpp1
            libwsman-common libwsman-devel ${NAME}-winrs
-           perl-${NAME} python2-${NAME} ruby-${NAME}"
+           perl-${NAME} python37-${NAME} ruby-${NAME}"
 libwsman1_SUMMARY="WS-Management protocol core library"
 libwsman1_REQUIRES="libwsman-common"
 libwsman1_CONTENTS="usr/bin/cygwsman-1.dll"
@@ -34,9 +34,11 @@ libwsman_devel_CONTENTS="
 	usr/lib/libwsman*.dll.a
 	usr/lib/pkgconfig/${NAME}*.pc
 "
+perl_openwsman_CATEGORY="Perl"
 perl_openwsman_CONTENTS=${PERL_VENDORARCH#/}" "${PERL_VENDORLIB#/}
-python2_openwsman_OBSOLETES="python-openwsman"
-python2_openwsman_CONTENTS=${PYTHON2_SITELIB#/}
+python37_openwsman_CATEGORY="Python"
+python37_openwsman_CONTENTS="usr/lib/python3.7/site-packages/*"
+ruby_openwsman_CATEGORY="Ruby"
 ruby_openwsman_CONTENTS=${RUBY_VENDORARCH#/}" "${RUBY_VENDORLIB#/}
 openwsman_winrs_CATEGORY="System"
 openwsman_winrs_SUMMARY="WS-Management remote shell"
@@ -57,3 +59,5 @@ CYGCMAKE_ARGS="
 	-DENABLE_EVENTING_SUPPORT=OFF
 	-DUSE_PAM=OFF
 "
+# bindings use wildcard depends which are not supported by ninja
+CYGCMAKE_GENERATOR="Unix Makefiles"
